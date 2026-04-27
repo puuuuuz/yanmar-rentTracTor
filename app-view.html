@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Yanmar Rental - Final Version</title>
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#E60012">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://unpkg.com/swiper/swiper-bundle.min.css" />
+    <script src="https://unpkg.com/swiper/swiper-bundle.min.js"></script>
+
+    <style>
+        body { background-color: #f8fafc; font-family: 'Kanit', sans-serif; }
+        .safe-padding-bottom { padding-bottom: env(safe-area-inset-bottom); }
+        .page { display: none; }
+        .page.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0.8; } to { opacity: 1; } }
+        .btn-gradient { background-image: linear-gradient(to right, #EF4444, #F97316); }
+        input::-webkit-calendar-picker-indicator { display: none; -webkit-appearance: none; }
+        .custom-checkbox { -webkit-appearance: none; appearance: none; background-color: #fff; margin: 0; font: inherit; color: currentColor; width: 1.25rem; height: 1.25rem; border: 0.15em solid #d1d5db; border-radius: 0.375rem; transform: translateY(-0.075em); display: grid; place-content: center; transition: 120ms transform ease-in-out; }
+        .custom-checkbox::before { content: ""; width: 0.65em; height: 0.65em; transform: scale(0); transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em #EF4444; transform-origin: bottom left; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%); }
+        .custom-checkbox:checked { border-color: #EF4444; }
+        .custom-checkbox:checked::before { transform: scale(1); }
+        .swiper-pagination-bullet-active { background-color: #E60012 !important; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app-container" class="max-w-md mx-auto h-screen bg-slate-100 flex flex-col">
+        
+        <div class="bg-slate-800 p-3 w-full flex justify-center items-center gap-2 shadow-md z-30 flex-shrink-0">
+            <span class="text-white font-medium text-sm">สลับมุมมอง:</span>
+            <div class="flex rounded-lg">
+                <button id="toggle-user-btn" onclick="switchToRole('user')" class="px-5 py-1.5 text-sm font-semibold transition-colors rounded-l-md">ลูกค้า</button>
+                <button id="toggle-dealer-btn" onclick="switchToRole('dealer')" class="px-5 py-1.5 text-sm font-semibold transition-colors rounded-r-md">ตัวแทน</button>
+            </div>
+        </div>
+        
+        <div id="main-app-wrapper" class="flex-grow flex-col hidden overflow-y-auto">
+            <header id="user-home-header" class="bg-white/80 backdrop-blur-sm p-4 border-b border-slate-200 sticky top-0 z-20 hidden items-center justify-between">
+                <div>
+                    <p class="text-sm text-slate-500">สวัสดี, เพื่อนเกษตรกร 🧍</p>
+                    <h1 class="text-2xl font-bold text-slate-800">ภาพรวมของคุณ</h1>
+                </div>
+                <button onclick="goToPage('page-settings', false)" class="p-2 -mr-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="user-circle-2" class="w-8 h-8 text-slate-600"></i>
+                </button>
+            </header>
+            <header id="user-main-header" class="bg-white/80 backdrop-blur-sm p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 z-20 hidden">
+                <div class="flex items-center gap-2">
+                    <button id="back-button" onclick="goBack()" class="hidden p-2 -ml-2 rounded-full hover:bg-slate-100"><i data-lucide="arrow-left" class="w-6 h-6 text-slate-700"></i></button>
+                    <h1 id="header-title" class="text-lg font-bold text-slate-800"></h1>
+                </div>
+                <button onclick="goToPage('page-settings', false)" class="p-2 -mr-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="user-circle-2" class="w-8 h-8 text-slate-600"></i>
+                </button>
+            </header>
+            <main id="main-content" class="flex-grow p-5 bg-slate-50 pb-20">
+                <div id="page-home" class="page"></div> <div id="page-location" class="page"></div> <div id="page-branch" class="page"></div> <div id="page-date-vehicle" class="page"></div> <div id="page-summary" class="page"></div> <div id="page-my-bookings" class="page"></div> <div id="page-settings" class="page"></div>
+            </main>
+        </div>
+        
+        <div id="dealer-app-wrapper" class="flex-grow flex-col hidden overflow-y-auto">
+            <header id="dealer-dashboard-header" class="bg-white/80 backdrop-blur-sm p-4 border-b border-slate-200 sticky top-0 z-20 hidden items-center justify-between">
+                 <div>
+                    <p class="text-sm text-slate-500">สวัสดี, ตัวแทนยันม่าร์ 🧑‍🔧</p>
+                    <h1 id="dealer-dashboard-title" class="text-2xl font-bold text-slate-800">ภาพรวมการจัดการ</h1>
+                </div>
+                <button onclick="goToDealerPage('page-dealer-settings', false)" class="p-2 -mr-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="user-circle-2" class="w-8 h-8 text-slate-600"></i>
+                </button>
+            </header>
+            <header id="dealer-main-header" class="bg-white/80 backdrop-blur-sm p-4 border-b border-slate-200 flex items-center justify-between sticky top-0 z-20 hidden">
+                <div class="flex items-center gap-2">
+                    <button id="dealer-back-button" onclick="goBackDealer()" class="hidden p-2 -ml-2 rounded-full hover:bg-slate-100"><i data-lucide="arrow-left" class="w-6 h-6 text-slate-700"></i></button>
+                    <h1 id="dealer-header-title" class="text-lg font-bold text-slate-800"></h1>
+                </div>
+                <button onclick="goToDealerPage('page-dealer-settings', false)" class="p-2 -mr-2 rounded-full hover:bg-slate-100">
+                    <i data-lucide="user-circle-2" class="w-8 h-8 text-slate-600"></i>
+                </button>
+            </header>
+            <main id="dealer-main-content" class="flex-grow p-5 pb-24 bg-slate-50">
+                <div id="page-dealer-dashboard" class="page"></div>
+                <div id="page-dealer-booking-detail" class="page"></div>
+                <div id="page-dealer-completed" class="page"></div>
+                <div id="page-dealer-settings" class="page"></div>
+            </main>
+        </div>
+        
+        <div id="date-vehicle-footer" class="bg-white/90 backdrop-blur-sm p-4 border-t sticky bottom-0 w-full max-w-md mx-auto safe-padding-bottom hidden flex-col">
+            <div class="flex justify-between items-center mb-2"><span class="font-bold text-slate-600">ราคารวมโดยประมาณ:</span><span id="running-total" class="font-bold text-xl text-slate-800"></span></div>
+            <button onclick="confirmDateAndVehicle()" class="w-full btn-gradient text-white font-bold py-3 px-4 rounded-lg shadow-md">ตรวจสอบข้อมูลสรุป</button>
+        </div>
+        
+        <nav id="bottom-nav" class="bg-white/90 backdrop-blur-sm border-t border-slate-200 sticky bottom-0 w-full max-w-md mx-auto safe-padding-bottom shadow-[0_-5px_15px_-5px_rgba(0,0,0,0.05)] hidden">
+            <div class="flex justify-around items-center h-16">
+                <button id="nav-home" onclick="goToPage('page-home', true)" class="text-center text-slate-500"><i data-lucide="home" class="w-6 h-6 mx-auto"></i><span class="text-xs font-medium">หน้าหลัก</span></button>
+                <button id="nav-bookings" onclick="goToPage('page-my-bookings', true)" class="text-center text-slate-500"><i data-lucide="layout-list" class="w-6 h-6 mx-auto"></i><span class="text-xs font-medium">รายการจอง</span></button>
+                <button id="nav-settings" onclick="goToPage('page-settings', false)" class="text-center text-slate-500"><i data-lucide="user-circle-2" class="w-6 h-6 mx-auto"></i><span class="text-xs font-medium">โปรไฟล์</span></button>
+            </div>
+        </nav>
+
+        <div id="qr-modal" class="fixed inset-0 bg-black/70 hidden items-center justify-center z-50 p-4"><div class="bg-white p-6 rounded-2xl text-center w-full max-w-xs shadow-2xl animate-in fade-in zoom-in-95"><h3 class="text-lg font-bold">สแกนเพื่อชำระเงิน</h3><p id="qr-price" class="font-bold text-2xl mt-4 mb-2"></p><img id="qr-image" src="" alt="QR Code" class="mx-auto rounded-lg"><div class="mt-6 grid grid-cols-2 gap-3"><button id="qr-save-btn" class="w-full bg-red-600 text-white font-bold py-3 rounded-lg hover:bg-red-700 transition-colors flex items-center justify-center gap-2"><i data-lucide="download" class="w-5 h-5"></i><span>บันทึกรูป</span></button><button id="qr-close-btn" class="w-full bg-slate-200 font-bold py-3 rounded-lg hover:bg-slate-300">ปิด</button></div></div></div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let currentRole = null;
+        
+        const mainAppWrapper = document.getElementById('main-app-wrapper');
+        const userHomeHeader = document.getElementById('user-home-header');
+        const userMainHeader = document.getElementById('user-main-header');
+        const headerTitle = document.getElementById('header-title');
+        const backButton = document.getElementById('back-button');
+        const dateVehicleFooter = document.getElementById('date-vehicle-footer');
+        const bottomNav = document.getElementById('bottom-nav');
+        
+        const dealerAppWrapper = document.getElementById('dealer-app-wrapper');
+        const dealerDashboardHeader = document.getElementById('dealer-dashboard-header');
+        const dealerDashboardTitle = document.getElementById('dealer-dashboard-title');
+        const dealerMainHeader = document.getElementById('dealer-main-header');
+        const dealerHeaderTitle = document.getElementById('dealer-header-title');
+        const dealerBackButton = document.getElementById('dealer-back-button');
+
+        const toggleUserBtn = document.getElementById('toggle-user-btn');
+        const toggleDealerBtn = document.getElementById('toggle-dealer-btn');
+        
+        let navigationStack = [];
+        let dealerNavigationStack = [];
+        let bookingState = {};
+        let allBookings = [];
+        let homeSwiper;
+
+        const availableAccessories = [ { id: 'plow', name: 'ผานพรวน', price: 500, imageUrl: 'https://placehold.co/100x100/EFEBE9/7D8B98?text=Plow' }, { id: 'bucket', name: 'บุ้งกี๋', price: 400, imageUrl: 'https://placehold.co/100x100/EFEBE9/7D8B98?text=Bucket' }, { id: 'breaker', name: 'หัวเจาะกระแทก', price: 1200, imageUrl: 'https://placehold.co/100x100/EFEBE9/7D8B98?text=Breaker' }, { id: 'mower', name: 'ชุดใบมีดตัดหญ้า', price: 350, imageUrl: 'https://placehold.co/100x100/EFEBE9/7D8B98?text=Mower' } ];
+        const tractorPromotions = [ { name: 'โปรฯ สุดคุ้ม! แทรกเตอร์ YM351R', details: 'เช่า 3 วัน ใช้งาน 24 ชั่วโมง', price: 5500, imageUrl: 'https://placehold.co/128x128/FFF3F3/E53935?text=YM351R' }, { name: 'แทรกเตอร์รุ่นใหญ่ YM371A', details: 'กำลังสูง งานเสร็จไว', price: 7200, imageUrl: 'https://placehold.co/128x128/E3F2FD/1E88E5?text=YM371A' }, { name: 'แทรกเตอร์อเนกประสงค์ Solis 26', details: 'คล่องตัว ทุกงานสวน', price: 4800, imageUrl: 'https://placehold.co/128x128/E8F5E9/43A047?text=Solis+26' } ];
+        const dealerBookings = [ { id: 'YT-1138', customerName: 'คุณสมชาย ใจดี', dates: '14 มิ.ย. 68 - 15 มิ.ย. 68', tractor: 'Yanmar YM351R', tractorId: 'กท-4567', accessories: ['ผานพรวน', 'บุ้งกี๋'], status: 'ยืนยันแล้ว', statusColor: 'blue' }, { id: 'YT-1139', customerName: 'คุณสมศรี มีสุข', dates: '16 มิ.ย. 68 - 18 มิ.ย. 68', tractor: 'Solis 26', tractorId: 'ขข-1234', accessories: ['ชุดใบมีดตัดหญ้า'], status: 'รอส่งมอบ', statusColor: 'orange' }, { id: 'YT-1135', customerName: 'คุณมานะ บากบั่น', dates: '10 มิ.ย. 68 - 12 มิ.ย. 68', tractor: 'Yanmar YM371A', tractorId: 'นน-8899', accessories: ['หัวเจาะกระแทก'], status: 'กำลังใช้งาน', statusColor: 'green' }, { id: 'YT-1120', customerName: 'คุณปรีดา พอใจ', dates: '1 มิ.ย. 68 - 3 มิ.ย. 68', tractor: 'Yanmar YM351R', tractorId: 'กท-4568', accessories: [], status: 'เสร็จสิ้น', statusColor: 'slate' } ];
+
+        const pageConfig = { 'page-home': { title: 'หน้าหลัก', nav: 'home' }, 'page-location': { title: 'ระบุตำแหน่ง' }, 'page-branch': { title: 'เลือกสาขา' }, 'page-date-vehicle': { title: 'เลือกวันและรถ' }, 'page-summary': { title: 'สรุปรายการ' }, 'page-my-bookings': { title: 'รายการจอง', nav: 'bookings' }, 'page-settings': { title: 'โปรไฟล์', nav: 'settings' } };
+        const dealerPageConfig = { 'page-dealer-dashboard': { title: 'ภาพรวมปัจจุบัน' }, 'page-dealer-booking-detail': { title: 'รายละเอียดงาน' }, 'page-dealer-completed': { title: 'ภาพรวมงานที่เสร็จสิ้น' }, 'page-dealer-settings': { title: 'ตั้งค่า' } };
+
+        window.switchToRole = (role) => {
+            if (role === currentRole) return;
+            currentRole = role;
+
+            if (role === 'dealer') {
+                mainAppWrapper.classList.add('hidden');
+                bottomNav.classList.add('hidden');
+                dateVehicleFooter.classList.add('hidden');
+                dealerAppWrapper.classList.remove('hidden');
+                dealerAppWrapper.classList.add('flex');
+                
+                toggleDealerBtn.className = "px-5 py-1.5 text-sm font-semibold transition-colors rounded-r-md bg-blue-500 text-white";
+                toggleUserBtn.className = "px-5 py-1.5 text-sm font-semibold transition-colors rounded-l-md bg-slate-600 text-slate-300";
+                goToDealerPage('page-dealer-dashboard', true);
+            } else { 
+                dealerAppWrapper.classList.add('hidden');
+                mainAppWrapper.classList.remove('hidden');
+                mainAppWrapper.classList.add('flex');
+                
+                toggleUserBtn.className = "px-5 py-1.5 text-sm font-semibold transition-colors rounded-l-md bg-blue-500 text-white";
+                toggleDealerBtn.className = "px-5 py-1.5 text-sm font-semibold transition-colors rounded-r-md bg-slate-600 text-slate-300";
+                goToPage('page-home', true);
+            }
+        };
+
+        window.logout = () => { if (confirm('คุณต้องการออกจากระบบหรือไม่?')) { switchToRole('user'); } }
+        
+        const initializeHomeSlider = () => {
+            if (document.querySelector('.home-swiper') && (!homeSwiper || homeSwiper.destroyed)) {
+                homeSwiper = new Swiper('.home-swiper', {
+                    loop: true,
+                    autoplay: { delay: 4000, disableOnInteraction: false },
+                    pagination: { el: '.swiper-pagination', clickable: true },
+                });
+            }
+        };
+
+        window.goToPage = (pageId, isRoot = false) => { if (currentRole !== 'user') return; if (isRoot) { navigationStack = [pageId]; } else if (navigationStack[navigationStack.length - 1] !== pageId) { navigationStack.push(pageId); } renderPage(pageId); };
+        window.goBack = () => { if (navigationStack.length > 1) { navigationStack.pop(); renderPage(navigationStack[navigationStack.length - 1]); } };
+        const renderPage = (pageId) => {
+            const targetPage = document.getElementById(pageId);
+            if (!targetPage) return;
+            if (targetPage.innerHTML.trim() === '' || pageId === 'page-home') { targetPage.innerHTML = pageTemplates[pageId] ? pageTemplates[pageId]() : ''; }
+            
+            const config = pageConfig[pageId] || {};
+            document.querySelectorAll('#main-app-wrapper .page').forEach(p => p.classList.remove('active'));
+            targetPage.classList.add('active');
+            
+            const isHomePage = pageId === 'page-home';
+            userHomeHeader.classList.toggle('hidden', !isHomePage);
+            userHomeHeader.classList.toggle('flex', isHomePage);
+            userMainHeader.classList.toggle('hidden', isHomePage);
+            userMainHeader.classList.toggle('flex', !isHomePage);
+
+            headerTitle.textContent = config.title || 'Yanmar';
+            backButton.classList.toggle('hidden', navigationStack.length <= 1);
+            
+            bottomNav.classList.remove('hidden');
+            dateVehicleFooter.classList.toggle('hidden', pageId !== 'page-date-vehicle');
+            dateVehicleFooter.classList.toggle('flex', pageId === 'page-date-vehicle');
+            
+            ['home', 'bookings', 'settings'].forEach(navId => {
+                const navBtn = document.getElementById(`nav-${navId}`);
+                if(navBtn) navBtn.className = `text-center transition-colors ${config.nav === navId ? 'text-red-600' : 'text-slate-500'}`
+            });
+            
+            mainAppWrapper.scrollTop = 0;
+            const setupFunctions = { 'page-home': initializeHomeSlider, 'page-location': () => {if (!map) initializeMap()}, 'page-branch': renderBranchList, 'page-date-vehicle': renderDateVehiclePage, 'page-summary': renderSummary, 'page-my-bookings': renderMyBookingsDashboard };
+            setupFunctions[pageId]?.();
+            lucide.createIcons();
+        };
+
+        window.goToDealerPage = (pageId, isRoot = false, data = null) => { if (currentRole !== 'dealer') return; if (isRoot) { dealerNavigationStack = [{ pageId, data }]; } else if (dealerNavigationStack[dealerNavigationStack.length - 1].pageId !== pageId) { dealerNavigationStack.push({ pageId, data }); } renderDealerPage(); };
+        window.goBackDealer = () => { if (dealerNavigationStack.length > 1) { dealerNavigationStack.pop(); renderDealerPage(); } };
+        const renderDealerPage = () => {
+            const { pageId, data } = dealerNavigationStack[dealerNavigationStack.length - 1];
+            const targetPage = document.getElementById(pageId);
+            if (!targetPage) return;
+            targetPage.innerHTML = dealerPageTemplates[pageId] ? dealerPageTemplates[pageId](data) : '';
+            
+            const config = dealerPageConfig[pageId] || {};
+            document.querySelectorAll('#dealer-app-wrapper .page').forEach(p => p.classList.remove('active'));
+            targetPage.classList.add('active');
+            
+            const isDashboard = pageId === 'page-dealer-dashboard' || pageId === 'page-dealer-completed';
+            dealerDashboardHeader.classList.toggle('hidden', !isDashboard);
+            dealerDashboardHeader.classList.toggle('flex', isDashboard);
+            dealerMainHeader.classList.toggle('hidden', isDashboard);
+            dealerMainHeader.classList.toggle('flex', !isDashboard);
+            
+            dealerHeaderTitle.textContent = config.title || 'Dealer';
+            dealerDashboardTitle.textContent = config.title || 'ภาพรวมการจัดการ';
+            dealerBackButton.classList.toggle('hidden', dealerNavigationStack.length <= 1);
+            
+            dealerAppWrapper.scrollTop = 0;
+            lucide.createIcons();
+        };
+        
+        const pageTemplates = {
+            'page-home': () => {
+                const promotionList = tractorPromotions.map(promo => `<li class="border-t border-slate-200"><div class="flex items-center p-4 cursor-pointer hover:bg-slate-100" onclick='selectPromotion(${JSON.stringify({name: promo.name, price: promo.price})})'><img src="${promo.imageUrl}" alt="${promo.name}" class="w-14 h-14 rounded-lg object-cover bg-slate-200"><div class="ml-4 flex-grow"><h3 class="font-semibold text-slate-800">${promo.name}</h3><p class="text-sm text-slate-500">${promo.details}</p></div><i data-lucide="chevron-right" class="w-5 h-5 text-slate-400"></i></div></li>`).join('');
+                return `<div class="swiper home-swiper mb-6 h-40 rounded-xl overflow-hidden shadow-md"><div class="swiper-wrapper"><div class="swiper-slide"><img src="https://www.yanmar.com/media/news/2024/11/08044713/Banner-Web-Nadech-SP_B.jpg" class="w-full h-full object-cover"></div><div class="swiper-slide"><img src="https://www.yanmar.com/media/news/2024/05/24052205/img_pr_movie_04_1920_1080.jpg?download=true" class="w-full h-full object-cover"></div><div class="swiper-slide"><img src="https://www.yanmar.com/media/news/2020/06/30233932/CE-Page-Banner-Image.jpg" class="w-full h-full object-cover"></div></div><div class="swiper-pagination"></div></div><div><h3 class="text-lg font-bold text-slate-800 mb-2 px-1">เลือกโปรโมชั่น</h3><ul class="bg-white border border-slate-200 rounded-xl overflow-hidden">${promotionList}</ul></div>`;
+            },
+            'page-location': () => `<input type="text" placeholder="ค้นหา จังหวัด, อำเภอ, ตำบล..." class="w-full p-3 border border-slate-300 rounded-lg mb-4"><div id="map" class="h-64 w-full rounded-lg border border-slate-300 z-10 shadow-inner"></div><p class="text-center text-sm text-slate-500 my-3">ปักหมุดบนแผนที่เพื่อระบุตำแหน่งที่แม่นยำ</p><button onclick="goToPage('page-branch')" class="w-full btn-gradient text-white font-bold py-3 px-4 rounded-lg shadow-md">ยืนยันตำแหน่ง</button>`, 
+            'page-branch': () => `<div class="space-y-3" id="branch-list"></div>`, 
+            'page-date-vehicle': () => `<div class="mb-6"><label class="font-bold text-slate-800 text-base">วันที่ใช้งาน</label><div class="grid grid-cols-2 gap-4 mt-2"><div class="relative flex items-center"><input type="date" id="booking-start-date" onchange="calculatePrice()" class="w-full p-3 border border-slate-300 rounded-lg mt-1"><i data-lucide="calendar" class="absolute right-3 w-5 h-5 text-slate-400 pointer-events-none"></i></div><div class="relative flex items-center"><input type="date" id="booking-end-date" onchange="calculatePrice()" class="w-full p-3 border border-slate-300 rounded-lg mt-1"><i data-lucide="calendar" class="absolute right-3 w-5 h-5 text-slate-400 pointer-events-none"></i></div></div></div><div class="mb-6"><label class="font-bold text-slate-800 text-base">ยืนันรุ่นรถที่เลือก</label><div id="vehicle-selection" class="mt-2 bg-white p-4 rounded-lg border-2 border-red-100 flex items-center gap-4 shadow-sm"></div></div><div class="mb-6"><label class="font-bold text-slate-800 text-base">เลือกอุปกรณ์เสริม (ถ้ามี)</label><div id="accessory-list" class="mt-2 space-y-3"></div></div>`, 
+            'page-summary': () => `<div class="bg-white p-6 rounded-xl border space-y-3"><div><p class="text-sm text-slate-500">โปรโมชั่น</p><p id="summary-promotion" class="font-bold"></p></div><hr><div><p class="text-sm text-slate-500">สาขาที่ให้บริการ</p><p id="summary-branch" class="font-bold"></p></div><hr><div><p class="text-sm text-slate-500">ระยะเวลาใช้งาน (<span id="summary-duration"></span> วัน)</p><p id="summary-date-range" class="font-bold"></p></div><hr><div id="summary-accessories-section" class="hidden"><p class="text-sm text-slate-500">อุปกรณ์เสริม</p><ul id="summary-accessories-list" class="list-disc list-inside text-sm text-slate-700"></ul></div><hr id="summary-accessories-hr" class="hidden"><div class="flex justify-between items-center pt-2"><p class="font-bold text-lg">ยอดรวมสุทธิ</p><p id="summary-price" class="font-bold text-2xl text-red-600"></p></div></div><div class="mt-6 space-y-2"><p class="font-bold">อัปโหลดเอกสาร</p><input type="file" class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100"/><input type="file" class="file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-50 file:text-red-600 hover:file:bg-red-100"/></div><button onclick="confirmAndPay()" class="mt-6 w-full btn-gradient text-white font-bold py-3 px-4 rounded-lg shadow-md">ยืนยันและชำระเงิน</button>`, 
+            'page-my-bookings': () => `<div id="dashboard-summary" class="grid grid-cols-2 gap-4 mb-8"></div><h3 class="font-bold text-slate-800 mb-4">ประวัติการจองล่าสุด</h3><div id="booking-history-list" class="space-y-4"></div>`, 
+            'page-settings': () => `<div class="p-4"><div class="flex flex-col items-center mb-8"><img src="https://i.pravatar.cc/80?img=12" alt="Profile" class="rounded-full w-20 h-20 mb-4"><h2 class="text-xl font-bold">เพื่อนเกษตรกร</h2><p class="text-slate-500">user.yanmar@example.com</p></div><div class="space-y-6"><div><h3 class="font-bold px-1 mb-2">จัดการโปรไฟล์</h3><div class="bg-white rounded-xl p-4 space-y-4 border"><div><label class="text-sm text-slate-600">ชื่อ-สกุล</label><input type="text" class="w-full bg-slate-100 p-2 border rounded-md mt-1" value="เพื่อนเกษตรกร"></div><div><label class="text-sm text-slate-600">เบอร์โทรศัพท์</label><input type="tel" class="w-full bg-slate-100 p-2 border rounded-md mt-1" value="081-234-5678"></div></div></div><div class="bg-white rounded-xl p-2 border"><button class="w-full text-left p-3 rounded-lg hover:bg-slate-100">ความช่วยเหลือ</button></div></div></div>` 
+        };
+        const dealerPageTemplates = {
+            'page-dealer-dashboard': () => {
+                const activeBookings = dealerBookings.filter(b => b.status !== 'เสร็จสิ้น');
+                const bookingCards = activeBookings.length > 0 ? activeBookings.map(b => ` <div class="bg-white border rounded-xl p-4 shadow-sm cursor-pointer hover:bg-slate-50" onclick="goToDealerPage('page-dealer-booking-detail', false, '${b.id}')"> <div class="flex justify-between items-start"> <div> <p class="font-bold text-slate-800">${b.id} - ${b.customerName}</p> <p class="text-sm text-slate-500">${b.tractor}</p> </div> <span class="text-xs font-semibold text-white bg-${b.statusColor}-500 px-2 py-1 rounded-full">${b.status}</span> </div> </div> `).join('') : `<div class="text-center py-12"><i data-lucide="inbox" class="w-16 h-16 mx-auto text-slate-300"></i><h3 class="mt-4 font-bold text-slate-600">ไม่มีรายการจองปัจจุบัน</h3></div>`;
+                return `<div class="flex border-b mb-4">
+                            <button class="flex-1 font-semibold p-3 border-b-2 border-red-500 text-red-500">รายการปัจจุบัน</button>
+                            <button onclick="goToDealerPage('page-dealer-completed')" class="flex-1 font-semibold p-3 text-slate-500">รายการที่เสร็จสิ้น</button>
+                        </div>
+                        <div class="space-y-4">${bookingCards}</div>`;
+            },
+            'page-dealer-completed': () => {
+                const completedBookings = dealerBookings.filter(b => b.status === 'เสร็จสิ้น');
+                const bookingCards = completedBookings.length > 0 ? completedBookings.map(b => ` <div class="bg-white border rounded-xl p-4 shadow-sm cursor-pointer hover:bg-slate-50" onclick="goToDealerPage('page-dealer-booking-detail', false, '${b.id}')"> <div class="flex justify-between items-start"> <div> <p class="font-bold text-slate-800">${b.id} - ${b.customerName}</p> <p class="text-sm text-slate-500">${b.tractor}</p> </div> <span class="text-xs font-semibold text-white bg-slate-500 px-2 py-1 rounded-full">${b.status}</span> </div> </div> `).join('') : `<div class="text-center py-12"><i data-lucide="check-check" class="w-16 h-16 mx-auto text-slate-300"></i><h3 class="mt-4 font-bold text-slate-600">ยังไม่มีรายการที่เสร็จสิ้น</h3></div>`;
+                return `<div class="flex border-b mb-4">
+                            <button onclick="goToDealerPage('page-dealer-dashboard')" class="flex-1 font-semibold p-3 text-slate-500">รายการปัจจุบัน</button>
+                            <button class="flex-1 font-semibold p-3 border-b-2 border-red-500 text-red-500">รายการที่เสร็จสิ้น</button>
+                        </div>
+                        <div class="space-y-4">${bookingCards}</div>`;
+            },
+            'page-dealer-booking-detail': (bookingId) => {
+                const booking = dealerBookings.find(b => b.id === bookingId);
+                if (!booking) return `<p>ไม่พบข้อมูลการจอง</p>`;
+                const accessoriesHtml = booking.accessories.length > 0 ? booking.accessories.map(acc => `<li class="text-slate-700">${acc}</li>`).join('') : '<li>ไม่มี</li>';
+                return `<div class="bg-white p-6 rounded-xl border space-y-4">
+                        <div><p class="text-sm text-slate-500">เลขที่งาน</p><p class="font-bold text-lg">${booking.id}</p></div><hr>
+                        <div><p class="text-sm text-slate-500">ชื่อลูกค้า</p><p class="font-bold">${booking.customerName}</p></div><hr>
+                        <div><p class="text-sm text-slate-500">ข้อมูลเครื่องจักร</p><p class="font-bold">${booking.tractor} (เลขเครื่อง: ${booking.tractorId})</p></div><hr>
+                        <div><p class="text-sm text-slate-500">อุปกรณ์เสริม</p><ul class="list-disc list-inside font-bold">${accessoriesHtml}</ul></div>
+                    </div>
+                    <div class="mt-8 space-y-6">
+                        <div class="bg-white p-4 rounded-xl border">
+                            <h3 class="font-bold text-lg mb-1">ตอนไปส่งรถ (Delivery)</h3>
+                            <p class="text-sm text-slate-500 mb-4">ถ่ายรูป 4 รูปเพื่อเป็นหลักฐาน</p>
+                            <div class="grid grid-cols-2 gap-3 mb-4 text-center">
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="image" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">1. ภาพรวมตัวรถ</p></div>
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="gauge-circle" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">2. หน้าปัดเรือนไมล์</p></div>
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="scan-line" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">3. หมายเลขซีเรียล</p></div>
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="wrench" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">4. อุปกรณ์เสริม</p></div>
+                            </div>
+                            <button onclick="alert('เปิดกล้องเพื่อถ่ายรูปส่งมอบ 4 รูป')" class="w-full flex items-center justify-center gap-2 bg-blue-500 text-white font-bold py-3 rounded-lg"><i data-lucide="camera"></i> ถ่ายรูปการส่งมอบ</button>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl border">
+                            <h3 class="font-bold text-lg mb-1">ตอนรับรถกลับ (Return)</h3>
+                            <p class="text-sm text-slate-500 mb-4">ถ่ายรูป 4 รูปเพื่อตรวจสอบสภาพ</p>
+                             <div class="grid grid-cols-2 gap-3 mb-4 text-center">
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="image-plus" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">1. ภาพรวมตัวรถ</p></div>
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="gauge-circle" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">2. หน้าปัดเรือนไมล์</p></div>
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="wrench" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">3. สภาพอุปกรณ์เสริม</p></div>
+                                <div class="bg-slate-100 p-3 rounded-lg"><i data-lucide="file-signature" class="w-6 h-6 mx-auto text-slate-400 mb-1"></i><p class="text-xs">4. เอกสารและลายเซ็น</p></div>
+                            </div>
+                            <button onclick="alert('เปิดกล้องเพื่อถ่ายรูปรับคืน 4 รูป')" class="w-full flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3 rounded-lg"><i data-lucide="camera"></i> ถ่ายรูปการรับคืน</button>
+                        </div>
+                    </div>`;
+            },
+            'page-dealer-settings': () => {
+                return `<div class="space-y-6">
+                            <div>
+                                <h3 class="font-bold text-slate-800 px-1 mb-2">จัดการโปรไฟล์</h3>
+                                <div class="bg-white rounded-xl p-4 space-y-4 border">
+                                    <div><label class="text-sm text-slate-600">ชื่อ-สกุล</label><input type="text" class="w-full bg-slate-100 p-2 border rounded-md mt-1" value="ตัวแทน ยันม่าร์"></div>
+                                    <div><label class="text-sm text-slate-600">เบอร์โทรศัพท์</label><input type="tel" class="w-full bg-slate-100 p-2 border rounded-md mt-1" value="02-123-4567"></div>
+                                    <button class="w-full bg-slate-800 text-white font-bold py-2.5 rounded-lg">บันทึกข้อมูล</button>
+                                </div>
+                            </div>
+                             <div>
+                                <h3 class="font-bold text-slate-800 px-1 mb-2">ความปลอดภัย</h3>
+                                <div class="bg-white rounded-xl p-4 space-y-4 border">
+                                    <button class="w-full text-left p-3 rounded-lg hover:bg-slate-100">เปลี่ยนรหัสผ่าน</button>
+                                </div>
+                            </div>
+                            <div class="pt-4"><button onclick="logout()" class="w-full bg-red-100 text-red-600 font-bold py-3 rounded-lg hover:bg-red-200">ออกจากระบบ</button></div>
+                        </div>`;
+            }
+        };
+
+        // === UTILITY FUNCTIONS ===
+        let map;
+        const resetBookingState = () => { bookingState = { promotion: null, basePrice: 0, finalPrice: 0, branch: null, startDate: null, endDate: null, accessories: [], duration: 1 }; };
+        window.selectPromotion = (promo) => { resetBookingState(); bookingState.promotion = promo.name; bookingState.basePrice = promo.price; bookingState.finalPrice = promo.price; goToPage('page-location'); };
+        window.selectBranch = (branchName) => { bookingState.branch = branchName; goToPage('page-date-vehicle'); };
+        window.toggleAccessory = (id, price, checkbox) => { const idx = bookingState.accessories.findIndex(a => a.id === id); if (checkbox.checked && idx === -1) { bookingState.accessories.push(availableAccessories.find(a => a.id === id)); } else if (!checkbox.checked && idx > -1) { bookingState.accessories.splice(idx, 1); } calculatePrice(); };
+        const calculatePrice = () => { const startDate = new Date(document.getElementById('booking-start-date').value); const endDate = new Date(document.getElementById('booking-end-date').value); let duration = 1; if (startDate && endDate && endDate >= startDate) { duration = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1; } bookingState.duration = duration; const totalAccessoryPrice = bookingState.accessories.reduce((sum, acc) => sum + acc.price, 0); bookingState.finalPrice = bookingState.basePrice + (totalAccessoryPrice * duration); document.getElementById('running-total').textContent = `฿${bookingState.finalPrice.toLocaleString()}`; };
+        window.confirmDateAndVehicle = () => { const startDateInput = document.getElementById('booking-start-date'); const endDateInput = document.getElementById('booking-end-date'); if (!startDateInput.value || !endDateInput.value) { alert('กรุณาเลือกวันเริ่มต้นและสิ้นสุด'); return; } if (new Date(endDateInput.value) < new Date(startDateInput.value)) { alert('วันที่สิ้นสุดต้องไม่ก่อนวันเริ่มต้น'); return; } bookingState.startDate = startDateInput.value; bookingState.endDate = endDateInput.value; goToPage('page-summary'); };
+        window.confirmAndPay = () => { const newBooking = { id: `YNMR-${Math.floor(1000 + Math.random() * 9000)}`, name: bookingState.promotion, price: bookingState.finalPrice, status: 'Pending', accessories: bookingState.accessories }; allBookings.unshift(newBooking); showQrModal(false, newBooking.price); };
+        const renderDateVehiclePage = () => { const startDateInput = document.getElementById('booking-start-date'); const endDateInput = document.getElementById('booking-end-date'); const today = new Date(); const tomorrow = new Date(today); tomorrow.setDate(tomorrow.getDate() + 1); startDateInput.value = today.toISOString().split('T')[0]; endDateInput.value = tomorrow.toISOString().split('T')[0]; document.getElementById('vehicle-selection').innerHTML = `<img src="https://placehold.co/128x128/FFF3F3/E53935?text=Tractor" alt="Tractor" class="w-16 h-16 rounded-lg object-cover bg-slate-200"><div><h4 class="font-bold text-slate-800">${bookingState.promotion}</h4><p class="text-sm text-slate-500">ราคาเหมา: ฿${bookingState.basePrice.toLocaleString()}</p></div>`; document.getElementById('accessory-list').innerHTML = availableAccessories.map(acc => `<label class="flex items-center justify-between bg-white border rounded-xl p-4 cursor-pointer hover:border-red-400"><div class="flex items-center gap-4"><img src="${acc.imageUrl}" alt="${acc.name}" class="w-10 h-10 rounded-lg object-cover bg-slate-200"><div><h4 class="font-bold text-slate-800">${acc.name}</h4><p class="text-sm text-slate-500">+ ฿${acc.price.toLocaleString()} / วัน</p></div></div><input type="checkbox" onchange="toggleAccessory('${acc.id}', ${acc.price}, this)" class="custom-checkbox"></label>`).join(''); calculatePrice(); };
+        const renderSummary = () => { const formatDate = (dateString) => new Date(dateString).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' }); document.getElementById('summary-promotion').textContent = bookingState.promotion; document.getElementById('summary-branch').textContent = bookingState.branch || '-'; document.getElementById('summary-duration').textContent = bookingState.duration; document.getElementById('summary-date-range').textContent = `${formatDate(bookingState.startDate)} - ${formatDate(bookingState.endDate)}`; const accSection = document.getElementById('summary-accessories-section'); const accList = document.getElementById('summary-accessories-list'); const accHr = document.getElementById('summary-accessories-hr'); if (bookingState.accessories.length > 0) { accList.innerHTML = bookingState.accessories.map(a => `<li>${a.name}</li>`).join(''); accSection.classList.remove('hidden'); accHr.classList.remove('hidden'); } else { accSection.classList.add('hidden'); accHr.classList.add('hidden'); } document.getElementById('summary-price').textContent = `฿${bookingState.finalPrice.toLocaleString()}`; };
+        const renderMyBookingsDashboard = () => { const summary = allBookings.reduce((acc, b) => { acc[b.status] = (acc[b.status] || 0) + 1; return acc; }, {}); document.getElementById('dashboard-summary').innerHTML = `<div class="bg-white p-4 rounded-xl border"><i data-lucide="wallet-cards" class="w-7 h-7 text-orange-500 mb-2"></i><p class="text-2xl font-bold">${summary.Pending || 0}</p><p class="text-sm">รอชำระเงิน</p></div><div class="bg-white p-4 rounded-xl border"><i data-lucide="check-check" class="w-7 h-7 text-green-500 mb-2"></i><p class="text-2xl font-bold">${summary.Completed || 0}</p><p class="text-sm">เสร็จสิ้น</p></div>`; const historyListEl = document.getElementById('booking-history-list'); if (allBookings.length === 0) { historyListEl.innerHTML = `<div class="text-center py-12"><i data-lucide="inbox" class="w-16 h-16 mx-auto text-slate-300"></i><h3 class="mt-4 font-bold text-slate-600">ไม่มีรายการจอง</h3><p class="text-sm text-slate-400">เริ่มต้นการจองแรกของคุณได้เลย</p><button onclick="goToPage('page-home', true)" class="mt-4 text-red-500 font-bold">เริ่มจองเลย</button></div>`; } else { historyListEl.innerHTML = allBookings.map(b => `<div class="bg-white p-4 rounded-xl border-l-4 border-${b.status === 'Pending' ? 'orange' : 'green'}-400 shadow-sm"><div class="flex justify-between"><div><p class="text-xs text-slate-400">${b.id}</p><h3 class="font-bold mt-1">${b.name}</h3><p class="text-sm">ยอด: <span class="font-semibold">฿${b.price.toLocaleString()}</span></p></div><span class="text-sm font-semibold text-${b.status === 'Pending' ? 'orange' : 'green'}-600">${b.status === 'Pending' ? 'รอชำระเงิน' : 'เสร็จสิ้น'}</span></div>${b.status === 'Pending' ? `<button class="show-qr-btn mt-4 w-full text-sm bg-orange-100 text-orange-700 font-bold py-2 rounded-lg" data-price="${b.price}">แสดง QR Code</button>` : ''}</div>`).join(''); } historyListEl.querySelectorAll('.show-qr-btn').forEach(btn => btn.addEventListener('click', (event) => { const price = parseFloat(event.currentTarget.dataset.price); showQrModal(true, price); })); };
+        const renderBranchList = () => { document.getElementById('branch-list').innerHTML = [ { name: 'ยันม่าร์ สาขานครปฐม', distance: 15.2 }, { name: 'ยันม่าร์ สาขาราชบุรี', distance: 25.8 } ].map(b => `<div class="bg-white border rounded-xl p-4 cursor-pointer hover:bg-red-50" onclick="selectBranch('${b.name}')"><h3 class="font-bold">${b.name}</h3><p class="text-sm text-slate-500">ระยะทาง: ${b.distance} กม.</p></div>`).join(''); };
+        const initializeMap = () => { if(!map) { map = L.map('map').setView([13.7563, 100.5018], 12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map); L.marker([13.7563, 100.5018], {draggable: true}).addTo(map); } };
+        const saveQrCode = async (imageUrl) => { try { const response = await fetch(imageUrl); const blob = await response.blob(); const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.style.display = 'none'; a.href = url; a.download = `yanmar-payment-qr.png`; document.body.appendChild(a); a.click(); window.URL.revokeObjectURL(url); a.remove(); } catch (error) { console.error('Error downloading QR Code:', error); alert('ไม่สามารถบันทึกรูปได้'); } };
+        const showQrModal = (isFromHistory, price) => { if (typeof price !== 'number' || isNaN(price)) { alert("เกิดข้อผิดพลาดในการแสดง QR Code"); return; } const modal = document.getElementById('qr-modal'); const qrImage = document.getElementById('qr-image'); const qrSaveBtn = document.getElementById('qr-save-btn'); qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://promptpay.io/0812345678/${price}`; document.getElementById('qr-price').textContent = `฿${price.toLocaleString()}`; document.getElementById('qr-close-btn').onclick = hideQrModal; qrSaveBtn.onclick = () => saveQrCode(qrImage.src); if (!isFromHistory) { document.getElementById('qr-close-btn').onclick = () => { hideQrModal(); goToPage('page-my-bookings', true); }; } modal.classList.add('flex'); modal.classList.remove('hidden'); lucide.createIcons(); };
+        const hideQrModal = () => { document.getElementById('qr-modal').classList.add('hidden'); };
+
+        // --- INITIALIZATION ---
+        resetBookingState();
+        switchToRole('user');
+        lucide.createIcons();
+    });
+    </script>
+</body>
+</html>
