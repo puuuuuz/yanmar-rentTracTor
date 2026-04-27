@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yanmar RentTractor - ยืนยันผู้ใช้</title>
+    <link rel="stylesheet" href="booking-list.css">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Main Container -->
+    <div class="app-container">
+
+        <!-- Left Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-tractor"></i>
+                    <span class="logo-text">Yanmar</span>
+                </div>
+                <button class="sidebar-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+
+            <nav class="sidebar-nav">
+                <a href="index.html" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Dashboard</span>
+                </a>
+
+                <div class="nav-section">ผู้ใช้งาน</div>
+                <a href="user-registration.html" class="nav-item">
+                    <i class="fas fa-user-plus"></i>
+                    <span>ลงทะเบียนใหม่</span>
+                    <span class="badge">12</span>
+                </a>
+                <a href="user-verification.html" class="nav-item active">
+                    <i class="fas fa-user-check"></i>
+                    <span>ยืนยันผู้ใช้</span>
+                </a>
+                <a href="admin-user-list.html" class="nav-item">
+                    <i class="fas fa-user-shield"></i>
+                    <span>ผู้ใช้งานแอดมิน</span>
+                </a>
+
+                <div class="nav-section">การจอง</div>
+                <a href="booking-list.html" class="nav-item">
+                    <i class="fas fa-calendar-check"></i>
+                    <span>รายการจอง</span>
+                </a>
+                <a href="booking-map.html" class="nav-item">
+                    <i class="fas fa-map-marked-alt"></i>
+                    <span>แผนที่การจอง</span>
+                </a>
+
+                <div class="nav-section">การส่งมอบ</div>
+                <a href="delivery-list.html" class="nav-item">
+                    <i class="fas fa-truck"></i>
+                    <span>รายการส่งมอบ</span>
+                </a>
+                <a href="gps-map.html" class="nav-item">
+                    <i class="fas fa-crosshairs"></i>
+                    <span>แผนที่ติดตาม GPS</span>
+                </a>
+
+                <div class="nav-section">จัดการข้อมูล</div>
+                <a href="dealer-management.html" class="nav-item">
+                    <i class="fas fa-store"></i>
+                    <span>จัดการ Dealer</span>
+                </a>
+                <a href="implement-management.html" class="nav-item">
+                    <i class="fas fa-tools"></i>
+                    <span>อุปกรณ์เสริม</span>
+                </a>
+                <a href="promotion-management.html" class="nav-item">
+                    <i class="fas fa-tags"></i>
+                    <span>โปรโมชั่น</span>
+                </a>
+                <a href="tractor-list.html" class="nav-item">
+                    <i class="fas fa-tractor"></i>
+                    <span>รถแทรกเตอร์</span>
+                </a>
+                <a href="dealer-implement-list.html" class="nav-item">
+                    <i class="fas fa-tools"></i>
+                    <span>รายการอุปกรณ์เสริม</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+
+            <!-- Top Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <h1>ยืนยันผู้ใช้</h1>
+                </div>
+                <div class="header-right">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="ค้นหาตามชื่อ หรือ UID...">
+                    </div>
+                    <div class="user-profile">
+                        <div class="profile-img">A</div>
+                        <div class="profile-info">
+                            <span class="user-name">Admin Yanmar</span>
+                            <span class="user-role">Administrator</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Table Section -->
+            <div class="table-container">
+                <div class="table-actions">
+                    <div class="record-info">
+                        <span class="record-title">รายชื่อผู้ใช้ทั้งหมด</span>
+                        <span class="record-count">0 รายการ</span>
+                    </div>
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="fetchUserData()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div class="master-view">
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th class="col-checkbox"><input type="checkbox"></th>
+                                    <th>รูปถ่าย</th>
+                                    <th>สถานะ</th>
+                                    <th>UID</th>
+                                    <th>ชื่อ-นามสกุล</th>
+                                    <th>เบอร์โทรศัพท์</th>
+                                    <th>จังหวัด</th>
+                                    <th>เช่าสะสม</th>
+                                    <th>วันที่สมัคร</th>
+                                    <th>หมายเหตุ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tableBody">
+                                <!-- Data will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Detail Panel (Side Sheet) -->
+                    <div class="detail-panel" id="detailPanel">
+                        <div class="detail-header">
+                            <div class="detail-title">รายละเอียดผู้ใช้</div>
+                            <button class="close-btn" onclick="closeDetail()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="detail-actions">
+                            <button class="action-btn action-create" onclick="verifyUser()">
+                                <i class="fas fa-check"></i>
+                                <span>Verify</span>
+                            </button>
+                            <button class="action-btn action-update" onclick="pendingUser()">
+                                <i class="fas fa-hourglass-half"></i>
+                                <span>Pending</span>
+                            </button>
+                            <button class="action-btn action-read" onclick="editUser()">
+                                <i class="fas fa-edit"></i>
+                                <span>Edit</span>
+                            </button>
+                            <button class="action-btn action-delete" onclick="deleteUser()">
+                                <i class="fas fa-trash"></i>
+                                <span>Delete</span>
+                            </button>
+                        </div>
+
+                        <div class="detail-body" id="detailBody">
+                            <!-- Detail content loaded dynamically -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div class="loading-overlay" id="loadingSpinner">
+                <div class="spinner"></div>
+                <div class="loading-text">กำลังโหลดข้อมูล...</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="api-router.js"></script>
+    <script src="user-verification-script.js"></script>
+</body>
+
+</html>
